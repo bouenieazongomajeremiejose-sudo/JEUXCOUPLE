@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Jeux Couples</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background-color: #fff0f5; }
+    button { margin: 10px; padding: 15px 25px; font-size: 18px; cursor: pointer; border-radius: 8px; border: none; background-color: #ff69b4; color: white; }
+    #jeuContainer, #maCarte { margin-top: 30px; font-size: 20px; }
+    input, textarea, select { padding: 5px; margin: 5px; font-size: 16px; }
+    .carte { border: 2px solid #ff69b4; padding: 15px; margin: 10px auto; border-radius: 10px; background-color: #ffe4e1; max-width: 400px;  }
+    .carte img { max-width: 200px; display: block; margin-top: 10px; }
+      @keyframes appear {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+      @keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+    button:hover{
+transform: scale(1.05);
+transition: 0.2s;
+}@keyframes slideIn {
+0% {
+transform: translateX(300px) rotate(10deg);
+opacity:0;
+}
+100% {
+transform: translateX(0) rotate(0);
+opacity:1;
+}
+}
+.carte{
+animation: appear 0.5s ease, bounce 0.5s, slideIn 0.4s ease;
+}
+
+    #deck{
+font-size:80px;
+cursor:pointer;
+margin:20px;
+}
+
+#cardZone{
+margin-top:20px;
+min-height:120px;
+}
+
+.cardGame{
+width:220px;
+margin:auto;
+padding:20px;
+border-radius:10px;
+background:white;
+border:2px solid #ff69b4;
+font-size:20px;
+}
+
+#scoreZone{
+margin-top:20px;
+font-size:22px;
+}
+    @keyframes shuffle{
+0%{transform:rotate(0)}
+50%{transform:rotate(10deg)}
+100%{transform:rotate(0)}
+}
+
+
+    @keyframes shuffleDeck{
+0%{transform:rotate(0)}
+25%{transform:rotate(10deg)}
+50%{transform:rotate(-10deg)}
+75%{transform:rotate(10deg)}
+100%{transform:rotate(0)}
+}
+
+#deck:active{
+animation:shuffleDeck 0.5s;
+} 
+    .cardGame{
+transition: transform 0.6s;
+
+}
+body{
+background:#1a1a1a;
+color:white;
+}
+
+    #scoreZone{
+font-size:28px;
+font-weight:bold;
+color:#ff1493;
+}
+    .cardGame{
+transition: transform 0.4s;
+}
+
+.shuffle{
+animation: melange 0.5s;
+}
+
+@keyframes melange{
+
+0%{transform:rotate(0deg)}
+25%{transform:rotate(10deg)}
+50%{transform:rotate(-10deg)}
+75%{transform:rotate(5deg)}
+100%{transform:rotate(0deg)}
+
+}
+  </style>
+  <!-- Librairie pour transformer une div en image -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+  <body>
+  <h1>Mini Jeux pour Couples à Distance</h1>
+  <h2>Jeu de Cartes Amoureux 🎴</h2>
+<h3>Niveau : <span id="niveau">Nouveau couple</span></h3>
+<div id="deckZone">
+
+<div id="deck">🂠</div>
+
+<div id="cardZone"></div>
+<button onclick="partagerCarte()">Partager la carte</button>
+<div id="scoreZone">
+Score couple ❤️ : <span id="score">0</span>
+</div>
+<h3>Créer ta carte</h3>
+
+<input id="newCardName" placeholder="Carte">
+<input id="newCardAction" placeholder="Action">
+<button onclick="modifierCarte()">Modifier une carte</button>
+<button onclick="ajouterCarte()">Ajouter carte</button>
+<button onclick="melangerDeck()">Mélanger</button>
+</div>
+  <button onclick="startQuiz()">Quiz Amoureux</button>
+  <button onclick="startMission()">Mission Secrète</button>
+  <button onclick="startQuestion()">Question Profonde</button>
+
+  <div id="jeuContainer"></div>
+
+  <hr>
+
+  <h2>Créer tes cartes personnalisées</h2>
+  <label>Type de carte :</label>
+  <select id="carteType">
+    <option value="Quiz">Quiz</option>
+    <option value="Mission">Mission</option>
+    <option value="Question">Question</option>
+  </select>
+  <br><br>
+
+  <label>Texte de la carte :</label><br>
+  <textarea id="carteTexte" rows="3" cols="40" placeholder="Écris ta question ou mission ici"></textarea>
+  <br><br>
+
+  <label>Choisir une image :</label>
+  <input type="file" id="carteImage">
+  <br><br>
+<button onclick="nouvelleCarte()">Nouvelle carte</button>
+  <button onclick="creerCarte()">Créer la carte</button>
+  <button onclick="telechargerToutesCartes()">Télécharger toutes les cartes</button>
+ <button onclick="partagerToutesCartesWhatsApp()">Partager toutes les cartes sur WhatsApp</button>
+ <button onclick="envoyerCarteWhatsApp()">Envoyer la carte sur WhatsApp</button>
+ <div id="zoneCartes"></div>
+  <div id="maCarte"></div>
+<audio id="sonClick" src="clic.mp3"></audio>
+<audio id="sonMission" src="mission.mp3"></audio>
+<audio id="sonCreation" src="creation.mp3"></audio>
+<p>Cartes restantes : <span id="restantes"></span></p>
+    <button onclick="afficherAide()">Aide ❓</button>
+      <button onclick="resetJeu()">Réinitialiser 🔄</button>
+    <script>
+      let lastCard = null;
+      let loveXP = 0;
+     
+     const actionsCouple = [
+"Fais un compliment à ton partenaire",
+"Envoie un emoji cœur ❤️",
+"Dis une chose que tu aimes chez lui/elle",
+"Fais un selfie amoureux",
+"Raconte votre souvenir préféré",
+"Dis pourquoi tu l'aimes"
+];
+       // Jouer un son
+
+function jouerSon(id){
+const son = document.getElementById(id);
+if(son){
+son.currentTime = 0;
+son.play().catch(()=>{});
+}
+}
+    // Données de test pour les jeux
+   const quizData = [
+  {"question": "Mon plat préféré ?"},
+  {"question": "Mon film préféré ?"},
+  {"question": "Mon endroit rêvé pour voyager ?"},
+  {"question": "Ma couleur préférée ?"},
+  {"question": "Mon rêve le plus fou ?"},
+  {"question": "Mon livre préféré ?"},
+  {"question": "Mon animal préféré ?"},
+  {"question": "Ma chanson préférée ?"},
+  {"question": "Mon pays préféré ?"},
+  {"question": "Mon super-héros préféré ?"},
+ {"question":"Mon hobby préféré ?"},
+  {"question":"Mon dessert préféré ?"},
+  {"question":"Mon sport favori ?"},
+  {"question":"Mon acteur préféré ?"},
+  {"question":"Mon dessin animé préféré ?"},
+  {"question":"Mon parfum préféré ?"},
+  {"question":"Ma boisson préférée ?"},
+  {"question":"Mon jeu vidéo préféré ?"},
+  {"question":"Mon fruit préféré ?"},
+  {"question":"Mon légume préféré ?"},
+  {"question":"Mon vêtement préféré ?"},
+  {"question":"Mon objet fétiche ?"},
+  {"question":"Mon lieu de vacances rêvé ?"},
+  {"question":"Mon style de musique préféré ?"},
+  {"question":"Mon animal de rêve ?"},
+  {"question":"Mon instrument de musique préféré ?"},
+  {"question":"Mon film d’enfance préféré ?"},
+  {"question":"Mon super-pouvoir rêvé ?"},
+  {"question":"Mon plat que je déteste ?"},
+  {"question":"Mon endroit préféré en ville ?"},
+  {"question":"Ma saison préférée ?"},
+  {"question":"Mon moment préféré de la journée ?"},
+  {"question":"Mon personnage historique préféré ?"},
+  {"question":"Ma série préférée ?"},
+  {"question":"Mon auteur préféré ?"},
+  {"question":"Mon acteur/actrice de rêve ?"},
+  {"question":"Mon moyen de transport préféré ?"},
+  {"question":"Mon dessert préféré d’enfance ?"},
+  {"question":"Ma tradition familiale préférée ?"},
+  {"question":"Mon style de film préféré ?"},
+  {"question":"Ma fête préférée ?"},
+  {"question":"Ma couleur préférée pour les vêtements ?"},
+  {"question":"Mon endroit préféré pour me détendre ?"},
+  {"question":"Mon jeu de société préféré ?"},
+  {"question":"Mon rêve d’aventure ?"},
+  {"question":"Mon personnage de fiction préféré ?"},
+  {"question":"Mon loisir créatif préféré ?"},
+  {"question":"Mon plat typique préféré ?"},
+  {"question":"Mon pays que je veux visiter ?"},
+  {"question":"Mon style d’art préféré ?"},
+  {"question":"Mon objet sentimental préféré ?"},
+  {"question":"Ma chanson d’enfance préférée ?"},
+  {"question":"Mon film préféré de l’année ?"},
+  {"question":"Ma friandise préférée ?"},
+  {"question":"Mon instrument de musique rêvé ?"},
+  {"question":"Mon super-héros préféré ?"},
+  {"question":"Mon sport que je voudrais apprendre ?"},
+  {"question":"Mon personnage Disney préféré ?"},
+  {"question":"Mon dessert exotique préféré ?"},
+  {"question":"Ma boisson chaude préférée ?"},
+  {"question":"Mon lieu préféré pour sortir ?"}
+];
+
+const missionData = [
+  {"mission": "Envoie une photo de ton endroit préféré dans la maison"},
+  {"mission": "Écris 3 compliments sur ton partenaire"},
+  {"mission": "Dessine un petit cœur et envoie la photo"},
+  {"mission": "Trouve une chanson qui te fait penser à nous"},
+  {"mission": "Prends une photo d’un objet qui te rappelle un souvenir commun"},
+  {"mission": "Fais un petit poème pour ton partenaire"},
+  {"mission": "Écris un message gentil à ton partenaire"},
+  {"mission": "Chante une chanson et envoie la vidéo"},
+  {"mission": "Fais un selfie rigolo et envoie-le"},
+  {"mission": "Partage ton moment préféré de la journée avec ton partenaire"},
+     {"mission":"Envoie une photo de ton objet préféré"},
+  {"mission":"Écris un mot doux à ton partenaire"},
+  {"mission":"Chante un extrait de ta chanson préférée"},
+  {"mission":"Fais un dessin rapide et montre-le"},
+  {"mission":"Partage un souvenir d’enfance"},
+  {"mission":"Écris une petite blague pour ton partenaire"},
+  {"mission":"Montre ton lieu préféré dans la maison"},
+  {"mission":"Écris trois choses que tu aimes chez ton partenaire"},
+  {"mission":"Fais un selfie avec ton sourire"},
+  {"mission":"Trouve quelque chose de rose et montre-le"},
+  {"mission":"Dessine un cœur et prends-le en photo"},
+  {"mission":"Fais un geste tendre à distance"},
+  {"mission":"Partage une phrase motivante"},
+  {"mission":"Fais une courte vidéo en riant"},
+  {"mission":"Montre ton endroit préféré dehors"},
+  {"mission":"Partage une chanson qui te rend heureux"},
+  {"mission":"Fais un dessin d’un animal mignon"},
+  {"mission":"Envoie une photo de ton repas du jour"},
+  {"mission":"Écris une chose que tu veux réaliser ensemble"},
+  {"mission":"Partage ton objet le plus drôle"},
+  {"mission":"Écris une devinette pour ton partenaire"},
+  {"mission":"Fais un geste drôle devant la caméra"},
+  {"mission":"Prends une photo d’un détail que tu aimes"},
+  {"mission":"Écris un petit poème"},
+  {"mission":"Montre quelque chose qui te fait sourire"},
+  {"mission":"Fais une vidéo de 5 secondes en chantant"},
+  {"mission":"Écris trois compliments inattendus"},
+  {"mission":"Fais un dessin du partenaire en fantaisie"},
+  {"mission":"Montre ton coin préféré pour te relaxer"},
+  {"mission":"Envoie un selfie amusant"},
+  {"mission":"Écris une chose que tu apprécies dans votre relation"},
+  {"mission":"Fais une courte vidéo en mimant une émotion"},
+  {"mission":"Trouve un objet qui te rappelle un souvenir commun"},
+  {"mission":"Écris une question drôle pour ton partenaire"},
+  {"mission":"Montre un détail de ton environnement"},
+  {"mission":"Fais une danse rapide de 3 secondes"},
+  {"mission":"Écris une devinette surprise"},
+  {"mission":"Partage un moment embarrassant"},
+  {"mission":"Montre ton objet préféré pour te détendre"},
+  {"mission":"Écris une petite anecdote rigolote"},
+  {"mission":"Fais un geste tendre pour ton partenaire"},
+  {"mission":"Partage ton dessin du jour"},
+  {"mission":"Écris un compliment créatif"},
+  {"mission":"Montre quelque chose que tu viens d’acheter"},
+  {"mission":"Écris trois choses que tu aimes dans la journée"},
+  {"mission":"Partage une photo de ton endroit préféré"},
+  {"mission":"Fais un mini sketch de 5 secondes"},
+  {"mission":"Écris une phrase douce ou amusante"},
+  {"mission":"Partage ton objet le plus sentimental"},
+  {"mission":"Fais un geste mignon ou drôle pour ton partenaire"}
+];
+
+const questionData = [
+  {"question": "Qu’est-ce qui te rend le plus heureux avec moi ?"},
+  {"question": "Quel est ton plus grand rêve pour nous ?"},
+  {"question": "Quelle habitude chez moi trouves-tu mignonne ?"},
+  {"question": "Qu’est-ce que tu aimerais qu’on fasse ensemble cette année ?"},
+  {"question": "Qu’est-ce que tu admires le plus chez moi ?"},
+  {"question": "Quelle est ta qualité préférée chez moi ?"},
+  {"question": "Quel est ton souvenir préféré avec moi ?"},
+  {"question": "Qu’est-ce qui te fait rire chez moi ?"},
+  {"question": "Quelle est ta chose préférée que nous faisons ensemble ?"},
+  {"question": "Quel est ton endroit préféré où nous sommes allés ensemble ?"},
+    {"question":"Quelle est la chose que tu veux accomplir cette année ?"},
+  {"question":"Quelle est ta plus grande peur ?"},
+  {"question":"Quelle est ta valeur la plus importante ?"},
+  {"question":"Quel moment de ta vie t’a marqué le plus ?"},
+  {"question":"Qu’est-ce qui te rend vraiment heureux ?"},
+  {"question":"Quel rêve veux-tu réaliser avec nous ?"},
+  {"question":"Qu’est-ce que tu admires chez moi ?"},
+  {"question":"Quel est ton souvenir préféré ensemble ?"},
+  {"question":"Quelle habitude de moi trouves-tu mignonne ?"},
+  {"question":"Quelle est ta plus grande force ?"},
+  {"question":"Qu’aimerais-tu changer dans ta vie ?"},
+  {"question":"Qu’est-ce qui te fait sourire tous les jours ?"},
+  {"question":"Quelle est ta plus grande fierté ?"},
+  {"question":"Qu’aimerais-tu qu’on fasse ensemble ce mois-ci ?"},
+  {"question":"Quel est ton plus grand rêve personnel ?"},
+  {"question":"Quelle est ta plus grande réussite ?"},
+  {"question":"Qu’aimerais-tu apprendre ?"},
+  {"question":"Quelle est ta qualité préférée chez moi ?"},
+  {"question":"Quel est ton moment préféré de la journée ?"},
+  {"question":"Qu’aimerais-tu améliorer dans notre relation ?"},
+  {"question":"Quelle est la chose que tu apprécies le plus ?"},
+  {"question":"Quel est ton endroit rêvé pour voyager ?"},
+  {"question":"Quelle est ta plus grande peur et pourquoi ?"},
+  {"question":"Qu’est-ce qui te motive chaque jour ?"},
+  {"question":"Qu’aimerais-tu que nous fassions plus souvent ?"},
+  {"question":"Quel est ton souvenir d’enfance préféré ?"},
+  {"question":"Quelle est la chose la plus drôle qui te soit arrivée ?"},
+  {"question":"Quel est ton rêve secret ?"},
+  {"question":"Quelle est ta plus grande passion ?"},
+  {"question":"Quel est ton plus beau souvenir avec moi ?"},
+  {"question":"Qu’aimerais-tu recevoir comme surprise ?"},
+  {"question":"Qu’est-ce qui te rend le plus fier de toi ?"},
+  {"question":"Quelle est la chose la plus importante pour toi ?"},
+  {"question":"Qu’aimerais-tu apprendre à faire ensemble ?"},
+  {"question":"Quel est ton lieu préféré pour te détendre ?"},
+  {"question":"Quelle est ta plus grande inquiétude ?"},
+  {"question":"Qu’est-ce qui te rend le plus triste ?"},
+  {"question":"Quelle est ta plus grande source de motivation ?"},
+  {"question":"Quel rêve veux-tu réaliser à deux ?"},
+  {"question":"Qu’aimerais-tu qu’on fasse ce week-end ?"},
+  {"question":"Quelle est la chose que tu apprécies le plus chez moi ?"},
+  {"question":"Quel est ton meilleur souvenir de nous deux ?"},
+  {"question":"Qu’aimerais-tu changer pour être plus heureux ?"},
+  {"question":"Quel est ton plus grand souhait pour notre avenir ?"},
+  {"question":"Quelle est la chose la plus précieuse pour toi ?"},
+  {"question":"Qu’aimerais-tu qu’on explore ensemble ?"},
+  {"question":"Quelle est ta plus grande source de bonheur ?"},
+  {"question":"Qu’est-ce que tu voudrais qu’on fasse pour s’amuser ?"},
+  {"question":"Quelle est ta plus belle réussite personnelle ?"},
+  {"question":"Qu’aimerais-tu que je sache sur toi ?"},
+  {"question":"Quelle est ta plus grande surprise pour moi ?"}
+];
+    // Fonctions des boutons des jeux
+   
+    // Liste pour stocker toutes les cartes créées
+    const cartesListe = [];
+// Jeux
+    function startQuiz() {
+      jouerSon("sonClick");
+      let html = "<h2>Quiz Amoureux</h2>";
+      quizData.forEach((q, i) => {
+        html += `<div class="carte"><p>${i+1}. ${q.question}</p><input type='text' placeholder='Ta réponse'></div>`;
+      });
+      document.getElementById("jeuContainer").innerHTML = html;
+    }
+
+    function startMission() {
+      jouerSon("sonClick");
+      let html = "<h2>Mission Secrète</h2>";
+      missionData.forEach((m, i) => {
+        html += `<div class="carte"><p>${i+1}. ${m.mission}</p><input type='text' placeholder='Réponse ou photo'></div>`;
+      });
+      document.getElementById("jeuContainer").innerHTML = html;
+    }
+
+    function startQuestion() {
+      jouerSon("sonClick");
+      let html = "<h2>Question Profonde</h2>";
+      questionData.forEach((q, i) => {
+        html += `<div class="carte"><p>${i+1}. ${q.question}</p><input type='text' placeholder='Ta réponse'></div>`;
+      });
+      document.getElementById("jeuContainer").innerHTML = html;
+    }
+
+    // Création carte personnalisée avec téléchargement individuel
+    function creerCarte() {
+
+  jouerSon("sonCreation");
+
+  const type = document.getElementById("carteType").value;
+  const texte = document.getElementById("carteTexte").value;
+      if(texte.trim() === ""){
+alert("Écris un texte pour la carte !");
+return;
+}
+  const imageInput = document.getElementById("carteImage");
+  const container = document.getElementById("maCarte");
+
+  const carteDiv = document.createElement("div");
+  carteDiv.className = "carte";
+
+  const titre = document.createElement("h3");
+  titre.innerText = type;
+  carteDiv.appendChild(titre);
+
+  const texteDiv = document.createElement("p");
+  texteDiv.innerText = texte;
+  carteDiv.appendChild(texteDiv);
+
+  if (imageInput.files && imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      carteDiv.appendChild(img);
+    }
+    reader.readAsDataURL(imageInput.files[0]);
+  }
+
+  // bouton téléchargement
+  const downloadBtn = document.createElement("button");
+  downloadBtn.innerText = "Télécharger cette carte";
+
+  downloadBtn.onclick = function() {
+
+    html2canvas(carteDiv).then(canvas => {
+
+      const lien = document.createElement("a");
+      lien.download = "ma_carte.png";
+      lien.href = canvas.toDataURL("image/png");
+      lien.click();
+
+    });
+
+  };
+
+  carteDiv.appendChild(downloadBtn);
+
+  // bouton whatsapp
+  const shareBtn = document.createElement("button");
+
+  shareBtn.innerText = "Partager sur WhatsApp";
+
+  shareBtn.onclick = () => {
+
+    const textePartage = type + " : " + texte;
+
+    const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(textePartage);
+
+    window.open(url, "_blank");
+
+  };
+
+  carteDiv.appendChild(shareBtn);
+
+  cartesListe.push(carteDiv);
+
+  container.appendChild(carteDiv);
+
+}
+
+    // Télécharger toutes les cartes en une seule image
+    function telechargerToutesCartes() {
+      if (cartesListe.length === 0) {
+        alert("Crée d'abord au moins une carte !");
+        return;
+      }
+
+      const tempDiv = document.createElement("div");
+      tempDiv.style.backgroundColor = "#fff0f5";
+      tempDiv.style.padding = "20px";
+
+      cartesListe.forEach(carte => {
+        const clone = carte.cloneNode(true);
+      clone.querySelectorAll("button").forEach(b => b.remove());
+        tempDiv.appendChild(clone);
+      });
+
+      document.body.appendChild(tempDiv);
+
+      html2canvas(tempDiv).then(canvas => {
+        const lien = document.createElement("a");
+        lien.download = "toutes_les_cartes.png";
+        lien.href = canvas.toDataURL("image/png");
+        lien.click();
+        document.body.removeChild(tempDiv);
+      });
+        
+    }function partagerToutesCartesWhatsApp() {
+  if (cartesListe.length === 0) {
+    alert("Crée d'abord au moins une carte !");
+    return;
+  }
+
+  // Construire le texte complet de toutes les cartes
+  let texteComplet = "";
+  cartesListe.forEach((carte, i) => {
+    const type = carte.querySelector("h3").innerText;
+    const texte = carte.querySelector("p").innerText;
+    texteComplet += `${i+1}. [${type}] ${texte}\n\n`;
+  });
+
+  // Ouvrir WhatsApp avec le texte
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texteComplet)}`;
+  window.open(url, "_blank");
+}
+      function partagerWhatsApp(texte) {
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texte)}`;
+  window.open(url, "_blank");
+} 
+     function nouvelleCarte(){
+
+const types = ["quiz","mission","question"];
+const typeRandom = types[Math.floor(Math.random()*types.length)];
+
+let data;
+
+if(typeRandom === "quiz"){data = quizData;}
+if(typeRandom === "mission"){data = missionData;}
+if(typeRandom === "question"){data = questionData;}
+
+const elementRandom = data[Math.floor(Math.random()*data.length)];
+
+let texte = elementRandom.question || elementRandom.mission;
+
+const zone = document.getElementById("zoneCartes");
+
+       zone.innerHTML = `
+<div class="carte">
+<h3>${typeRandom.toUpperCase()}</h3>
+<p>${texte}</p>
+<input type="text" placeholder="Ta réponse">
+<br><br>
+<button onclick="envoyerQuestion(\`${texte}\`)">Envoyer à mon partenaire</button>
+</div>
+`;
+
+}
+      function envoyerCarteWhatsApp(){
+
+const carte = document.querySelector("#zoneCartes .carte") || document.querySelector("#maCarte .carte:last-child");
+if(!carte){
+alert("Aucune carte à envoyer !");
+return;
+}
+html2canvas(carte).then(canvas => {
+
+const image = canvas.toDataURL("image/png");
+
+const lien = document.createElement("a");
+lien.href = image;
+lien.download = "carte-jeu.png";
+lien.click();
+
+alert("Image téléchargée. Envoie-la sur WhatsApp.");
+
+});
+
+}function envoyerQuestion(texte){
+
+const message = "Jeu couple ❤️\n\nQuestion pour toi :\n\n" + texte;
+
+const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(message);
+
+window.open(url,"_blank");
+
+}let score = 0;
+
+const symboles = ["♠","♥","♦","♣"];
+const valeurs = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+let deck = [];
+
+symboles.forEach(symbole=>{
+  valeurs.forEach(valeur=>{
+    deck.push({
+      carte: valeur + " " + symbole,
+      action: "Action personnalisée"
+    });
+    
+  });
+});
+      for(let i=1;i<=100;i++){
+
+const action = actionsCouple[Math.floor(Math.random()*actionsCouple.length)];
+
+deck.push({
+carte:"Carte spéciale "+i,
+action:action
+});
+
+}
+      function modifierCarte(){
+
+const nom = document.getElementById("newCardName").value;
+const action = document.getElementById("newCardAction").value;
+
+let trouve = false;
+
+deck.forEach(c=>{
+if(c.carte.toLowerCase() === nom.toLowerCase()){
+c.action = action;
+trouve = true;
+}
+});
+
+if(trouve){
+localStorage.setItem("deckCouple",JSON.stringify(deck));
+alert("Carte modifiée !");
+}else{
+alert("Carte introuvable !");
+}
+
+}
+    
+  
+      document.getElementById("deck").onclick = tirerCarte;
+      function bonneAction(){
+
+score += 5;
+loveXP += 10;
+document.getElementById("niveau").innerText = niveauCouple();
+document.getElementById("score").innerText = score;
+
+tirerCarte();
+melangerDeck();
+}
+      
+function tirerCarte(){
+ 
+  if(deck.length === 0){
+alert("Plus de cartes !");
+return;
+}
+
+const random = deck[Math.floor(Math.random()*deck.length)];
+lastCard = random;
+
+const parts = random.carte.split(" ");
+const valeur = parts[0];
+const symbole = parts[1] || "";
+let codeSymbole = "";
+
+if(symbole=="♥"){codeSymbole="H"}
+if(symbole=="♠"){codeSymbole="S"}
+if(symbole=="♦"){codeSymbole="D"}
+if(symbole=="♣"){codeSymbole="C"}
+
+let codeValeur = valeur;
+
+if(valeur=="A") codeValeur="A";
+if(valeur=="J") codeValeur="J";
+if(valeur=="Q") codeValeur="Q";
+if(valeur=="K") codeValeur="K";
+  
+
+
+
+
+let img = "";
+
+if(symbole && ["A","2","3","4","5","6","7","8","9","10","J","Q","K"].includes(valeur)){
+img = `https://deckofcardsapi.com/static/img/${codeValeur}${codeSymbole}.png`;
+}
+const zone = document.getElementById("cardZone");
+
+zone.innerHTML = `
+<div class="cardGame">
+${img ? `<img src="${img}" width="120">` : ""}
+
+<p><b>${random.carte}</b></p>
+<p>${random.action}</p>
+
+<button onclick="bonneAction()">✔ Réussi</button>
+<button onclick="passerCarte()">❌ Passer</button>
+
+</div>
+`; 
+ 
+  jouerSon("sonClick");
+  const index = deck.indexOf(random);
+  deck.splice(index,1);
+  
+localStorage.setItem("deckCouple", JSON.stringify(deck));
+document.getElementById("restantes").innerText = deck.length;
+}
+function passerCarte(){
+
+tirerCarte();
+
+}let startX = 0;
+
+document.addEventListener("touchstart", e=>{
+startX = e.touches[0].clientX;
+});
+
+document.addEventListener("touchend", e=>{
+
+let endX = e.changedTouches[0].clientX;
+
+if(endX - startX > 100){
+bonneAction();
+}
+
+if(startX - endX > 100){
+passerCarte();
+}
+
+});
+      
+  function melangerDeck(){
+
+for(let i = deck.length-1; i>0; i--){
+
+const j = Math.floor(Math.random()*(i+1));
+
+[deck[i],deck[j]]=[deck[j],deck[i]];
+
+}
+    document.getElementById("cardZone").classList.add("shuffle");
+
+setTimeout(()=>{
+document.getElementById("cardZone").classList.remove("shuffle");
+},500);
+  }
+function ajouterCarte(){
+
+const name = document.getElementById("newCardName").value;
+const action = document.getElementById("newCardAction").value;
+if(name === "" || action === ""){
+alert("Écris le nom et l'action !");
+return;
+}
+const nouvelle = {carte:name, action:action};
+
+deck.push(nouvelle);
+
+localStorage.setItem("deckCouple",JSON.stringify(deck));
+document.getElementById("newCardName").value = "";
+document.getElementById("newCardAction").value = "";
+alert("Carte ajoutée au paquet !");
+
+// afficher directement la carte
+document.getElementById("cardZone").innerHTML = `
+<div class="cardGame">
+<p>${name}</p>
+<p>${action}</p>
+</div>
+`;
+
+}
+    
+      function envoyerCarteDistance(carte){
+
+const message = "Carte tirée 🎴 : " + carte;
+
+const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(message);
+
+window.open(url,"_blank");
+
+}
+      function resetJeu(){
+localStorage.removeItem("deckCouple");
+location.reload();
+}
+      function partagerCarte(){
+
+if(!lastCard){
+alert("Tire une carte d'abord !");
+return;
+}
+  
+
+const texte = lastCard.carte + " - " + lastCard.action;
+
+envoyerCarteDistance(texte);
+
+}
+      function afficherAide(){
+alert(
+"🎮 COMMENT JOUER :\n\n" +
+
+"🃏 Jeu de cartes :\n" +
+"- Clique sur le paquet pour tirer une carte\n" +
+"- Fais l’action affichée\n" +
+"- Clique sur ✔ si réussi ou ❌ pour passer\n\n" +
+
+"❤️ Score :\n" +
+"- +5 points par action réussie\n" +
+"- Ton niveau augmente avec l’amour (XP)\n\n" +
+
+"🎯 Quiz amoureux :\n" +
+"- Réponds aux questions sur ton partenaire\n\n" +
+
+"🎁 Mission secrète :\n" +
+"- Réalise des défis (photo, message…)\n\n" +
+
+"💬 Questions profondes :\n" +
+"- Discutez pour mieux vous connaître\n\n" +
+
+"📤 Partage :\n" +
+"- Tu peux envoyer les cartes sur WhatsApp\n\n" +
+
+"🔥 Astuce :\n" +
+"- Jouez tous les jours pour monter de niveau !"
+);
+}
+    
+            function niveauCouple(){
+
+if(loveXP < 50) return "Nouveau couple";
+if(loveXP < 150) return "Couple complice";
+if(loveXP < 300) return "Couple solide";
+if(loveXP < 500) return "Couple légendaire";
+
+return "Âmes sœurs";
+}
+        
+        
+  document.getElementById("niveau").innerText = niveauCouple();
+      const saved = localStorage.getItem("deckCouple");
+ if(saved){
+const deckSauvegarde = JSON.parse(saved);
+if(deckSauvegarde.length > 0){
+deck = deckSauvegarde;
+}
+}
+
+ melangerDeck();
+     
+  </script>
+</body>
+</html> 
